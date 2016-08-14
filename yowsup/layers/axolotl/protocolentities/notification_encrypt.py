@@ -28,5 +28,8 @@ class EncryptNotification(NotificationProtocolEntity):
     def fromProtocolTreeNode(node):
         entity = NotificationProtocolEntity.fromProtocolTreeNode(node)
         entity.__class__ = EncryptNotification
-        entity.setProps(node.getChild("count")["value"])
+        try:
+            entity.setProps(node.getChild("count")["value"])
+        except TypeError:
+            pass
         return entity
