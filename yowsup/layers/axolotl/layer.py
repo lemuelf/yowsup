@@ -9,6 +9,7 @@ from yowsup.layers.axolotl.store.sqlite.liteaxolotlstore import LiteAxolotlStore
 from yowsup.layers.axolotl.protocolentities.noprekeyrecord import NoPrekeyRecordException
 from yowsup.layers.axolotl.protocolentities import *
 from yowsup.structs import ProtocolTreeNode
+from yowsup.common.tools import Jid
 from yowsup.common.tools import StorageTools
 from yowsup.common import YowConstants
 
@@ -150,7 +151,17 @@ class YowAxolotlLayer(YowProtocolLayer):
         entity = EncryptNotification.fromProtocolTreeNode(protocolTreeNode)
         ack = OutgoingAckProtocolEntity(protocolTreeNode["id"], "notification", protocolTreeNode["type"], protocolTreeNode["from"])
         self.toLower(ack.toProtocolTreeNode())
-        self.sendKeys(fresh=False, countPreKeys = self.__class__._COUNT_PREKEYS - entity.getCount())
+        if hasattr(entity, 'count'):
+            self.sendKeys(
+                fresh=False,
+                countPreKeys=self.__class__._COUNT_PREKEYS - entity.getCount())
+        else:
+            entity = GetKeysIqProtocolEntity([Jid.normalize(entity.getFrom())])
+            self._sendIq(
+                entity,
+                lambda a, b: self.onGetKeysResult(
+                    a, b, self.processPendingMessages),
+                self.onGetKeysError)
 
     def onMessage(self, protocolTreeNode):
         encNode = protocolTreeNode.getChild("enc")
